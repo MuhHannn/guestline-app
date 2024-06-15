@@ -1,13 +1,11 @@
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
+import { CSVLink } from "react-csv";
 
 export default function Home() {
   const router = useRouter();
-  const [dataDetail, setDetail] = useState(null);
   const [showAllData, setShowAllData] = useState([]);
-  const [showModal, setShowModal] = useState(false);
-
-  const { idDetail } = router.query;
+  const [selectedDetail, setSelectedDetail] = useState(null);
 
   useEffect(() => {
     fetch(`/api/get-all`)
@@ -21,43 +19,54 @@ export default function Home() {
         }
       })
       .catch((err) => {
-        alert("Hubungi saya nek error");
-        console.log("Gada Data jadinya error", err.message);
+        console.error("Failed to fetch data:", err);
+        alert("Failed to fetch data. Please try again.");
       });
   }, []);
-
-  useEffect(() => {
-    if (!idDetail) return;
-
-    fetch(`/api/get-detail?id=${idDetail}`)
-      .then((res) => res.json())
-      .then((data) => {
-        console.log(data);
-        if (!data.data) {
-          setDetail(null);
-          alert("Data tidak ditemukan");
-          router.push(`/`);
-        } else {
-          setDetail(data.data);
-        }
-      });
-  }, [idDetail]);
 
   const handleShowDetail = (id) => {
     fetch(`/api/get-detail?id=${id}`)
       .then((res) => res.json())
       .then((data) => {
         if (data.data) {
-          setDetail(data.data);
+          setSelectedDetail(data.data);
           setShowModal(true);
         } else {
-          alert("Data tidak ditemukan");
+          alert("Data not found");
         }
       })
       .catch((err) => {
-        alert("Terjadi kesalahan");
-        console.log(err);
+        console.error("Failed to fetch detail:", err);
+        alert("Failed to fetch detail. Please try again.");
       });
+  };
+
+  const generateCSVData = () => {
+    const csvData = [
+      [
+        "ID",
+        "Nama",
+        "Email",
+        "No Whatsapp",
+        "Keperluan",
+        "Nomor Antrian",
+        "Tanggal",
+      ],
+    ];
+
+    showAllData.forEach((item) => {
+      csvData.push([
+        item.id,
+        item.nama,
+        item.email,
+        item.no_wa,
+        item.keperluan,
+        item.nomor_antrian,
+        `${item.tanggal}/${item.bulan}/${item.tahun}`,
+      ]);
+    });
+
+    return csvData;
   };
 
   return (
@@ -65,49 +74,44 @@ export default function Home() {
       <div className="flex justify-end gap-2">
         <button
           className="bg-blue-500 text-white px-4 py-2 rounded mb-5"
-          onClick={() => {
-            router.push("/");
-          }}
+          onClick={() => router.push("/")}
         >
           Buat Antrian
         </button>
         <button
           className="bg-blue-500 text-white px-4 py-2 rounded mb-5"
-          onClick={() => {
-            router.push("/daftar-antrian");
-          }}
+          onClick={() => router.push("/daftar-antrian")}
         >
           Daftar Antrian
         </button>
         <button
           className="bg-blue-500 text-white px-4 py-2 rounded mb-5"
-          onClick={() => {
-            router.push("/print-all");
-          }}
+          onClick={() => router.push("/print-all")}
         >
           Cetak Semua
         </button>
       </div>
+
       {showAllData.length === 0 && <p className="text-red-500">Data Kosong</p>}
+
       {showAllData.length > 0 && (
         <div className="w-full">
           <div className="flex gap-3 mb-5">
-            <a
-              href="print-all.js"
-              download="print-all.js"
+            <CSVLink
+              data={generateCSVData()}
+              filename={"data.csv"}
               className="bg-blue-500 text-white px-4 py-2 rounded"
             >
               Download CSV
-            </a>
+            </CSVLink>
             <button
               className="bg-blue-500 text-white px-4 py-2 rounded"
-              onClick={() => {
-                window.print();
-              }}
+              onClick={() => window.print()}
             >
               Cetak Semua Data
             </button>
           </div>
+
           <table className="w-full bg-white">
             <thead className="bg-slate-200">
               <tr>
@@ -145,9 +149,7 @@ export default function Home() {
                   <td className="py-2 px-4 text-center border border-slate-300">
                     {data.nomor_antrian}
                   </td>
-                  <td className="py-2 px-4 text-center border border-slate-300">
-                    {data.tanggal}/{data.bulan}/{data.tahun}
-                  </td>
+                  <td className="py-2 px-4 text-center border border-slate-300">{`${data.tanggal}/${data.bulan}/${data.tahun}`}</td>
                 </tr>
               ))}
             </tbody>

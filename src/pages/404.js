@@ -32,10 +32,13 @@ export default function Custom404() {
         </button>
       </div>
       <div className="flex flex-col justify-center align-items text-center">
-        <button className="bg-blue-500 text-white px-3 py-1 rounded">
-          404 - Page Not Found
-        </button>
-        <h1>The page you are looking for does not exist</h1>
+        <div>
+          {" "}
+          <button className="bg-blue-500 text-white px-3 py-1 rounded">
+            404 - Page Not Found
+          </button>
+          <h1>The page you are looking for does not exist</h1>
+        </div>
       </div>
     </div>
   );
